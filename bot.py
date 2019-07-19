@@ -1,8 +1,7 @@
 import sys
 import asyncio
-import aiohttp
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 import utils
 import config
@@ -96,6 +95,19 @@ async def _character(ctx, arg:str):
                 res[0]["mythic_plus_weekly_highest_level_runs"][0]["mythic_level"],
                 MYTHIC_PLUS_RESULTS[res[0]["mythic_plus_weekly_highest_level_runs"][0]["num_keystone_upgrades"]]))
 
+    boss_count = len(res[1]["progression"]["raids"][-1]["bosses"])
+    normal_kills, heroic_kills, mythic_kills = 0, 0, 0
+    for boss in res[1]["progression"]["raids"][-1]["bosses"]:
+        normal_kills += (1 if boss["normalKills"] > 0 else 0)
+        heroic_kills += (1 if boss["heroicKills"] > 0 else 0)
+        mythic_kills += (1 if boss["mythicKills"] > 0 else 0)
+    embed.add_field(
+        name="{} 진행도".format(res[1]["progression"]["raids"][-1]["name"]),
+        value="일반 {}/{}, 영웅 {}/{}, 신화 {}/{}".format(
+            normal_kills, boss_count,
+            heroic_kills, boss_count,
+            mythic_kills, boss_count))
+
     msg = await msg.edit(embed=embed)
 
 
@@ -130,9 +142,16 @@ async def _affixes(ctx):
     msg = await msg.edit(embed=embed)
 
 
+@tasks.loop(seconds=60)
+async def change_token():
+    # Changes Blizzard api access token every 60 seconds.
+    await Blizzard.change_access_token()
+
+
 if __name__ == "__main__":
     token = config.get("discord_token")
     if token is None:
         logger.error("Failed to get discord token.")
     else:
+        change_token.start()
         bot.run(token)

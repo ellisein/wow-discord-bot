@@ -29,8 +29,7 @@ class Raider:
         query = "?region={}".format(REGION) \
                 + "&realm={}".format(SERVER.EN(server_name)) \
                 + "&name={}".format(character_name) \
-                + "&fields=gear,raid_progression," \
-                + "mythic_plus_scores_by_season:current," \
+                + "&fields=gear,mythic_plus_scores_by_season:current," \
                 + "mythic_plus_weekly_highest_level_runs"
         url = encode("{}/characters/profile".format(cls.BASE), query)
 
