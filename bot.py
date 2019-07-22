@@ -26,7 +26,25 @@ async def on_error(event, *args, **kwargs):
     logger.error("Error occurred from event '{}'".format(event))
 
 
+@bot.event
+async def on_command_error(ctx, exception):
+    if type(exception) == commands.errors.CommandOnCooldown:
+        await ctx.send(
+            embed=discord.Embed(
+                title="명령어 오류",
+                color=COLOR.RED,
+                description="짧은 시간 동안 너무 많은 명령어를 입력하였습니다." \
+                    + "\n잠시 후 다시 시도해주세요."))
+    else:
+        await ctx.send(
+            embed=discord.Embed(
+                title="명령어 오류",
+                color=COLOR.RED,
+                description=exception))
+
+
 @bot.command(name="캐릭터")
+@commands.cooldown(10, 60, commands.BucketType.user)
 async def _character(ctx, *args):
     await ctx.trigger_typing()
     if len(args) == 0:
@@ -128,6 +146,7 @@ async def _character(ctx, *args):
 
 
 @bot.command(name="어픽스")
+@commands.cooldown(3, 60, commands.BucketType.user)
 async def _affixes(ctx):
     await ctx.trigger_typing()
     msg = await ctx.send(
@@ -137,6 +156,7 @@ async def _affixes(ctx):
             description="이번주 쐐기 던전 어픽스 정보를 불러오는 중입니다."))
 
     res = await Raider.get_weekly_affixes()
+
     if res is None:
         await msg.edit(
             embed=discord.Embed(

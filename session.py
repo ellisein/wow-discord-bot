@@ -1,3 +1,4 @@
+import asyncio
 import aiohttp
 from functools import wraps
 from datetime import datetime, timedelta
@@ -5,19 +6,11 @@ from datetime import datetime, timedelta
 import logger
 
 
-class Session:
-    def __init__(self):
-        self._session = aiohttp.ClientSession()
-        logger.info("Initialized a new aiohttp session.")
-
-    def __del__(self):
-        self._session.close()
-        logger.info("Closed the aiohttp session.")
-
-s = Session()
+_session = aiohttp.ClientSession()
+logger.info("Initialized a new aiohttp session.")
 
 def get_session():
-    return s._session
+    return _session
 
 
 _instant_result = dict()
