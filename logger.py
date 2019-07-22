@@ -4,9 +4,11 @@ import os
 import logging as _logging
 from threading import Lock
 
+import config
+
 
 _logger = None
-_logger_level = _logging.DEBUG
+_logger_level = _logging.INFO
 
 _logger_lock = Lock()
 
@@ -26,15 +28,22 @@ def _get_logger():
 
     _logger_lock.acquire()
     try:
-        logger = _logging.getLogger("pyutils")
+        logger = _logging.getLogger("wow-discord-bot")
+
         logger.setLevel(_logger_level)
+        logger_level = config.get("logger_loglevel").upper()
+        for k, v in LOG_LEVEL_NAMES.items():
+            if v == logger_level:
+                logger.setLevel(k)
+
         formatter = _logging.Formatter("[%(levelname)s] %(message)s")
         streamHandler = _logging.StreamHandler()
         streamHandler.setFormatter(formatter)
         logger.addHandler(streamHandler)
-        #fileHandler = _logging.FileHandler("logs.txt")
-        #fileHandler.setFormatter(formatter)
-        #logger.addHandler(fileHandler)
+        if config.get("logger_filelog") == "true":
+            fileHandler = _logging.FileHandler("logs.txt")
+            fileHandler.setFormatter(formatter)
+            logger.addHandler(fileHandler)
         
         _logger = logger
         return _logger
