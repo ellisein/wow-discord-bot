@@ -27,10 +27,26 @@ async def on_error(event, *args, **kwargs):
 
 
 @bot.command(name="캐릭터")
-async def _character(ctx, arg:str):
-    character_name, server_name = utils.parse_character_name(arg)
+async def _character(ctx, *args):
+    await ctx.trigger_typing()
+    if len(args) == 0:
+        embed = discord.Embed(
+            title="명령어 오류",
+            color=COLOR.RED,
+            description="명령어 뒤에 '캐릭터 이름-서버 이름'을 적어야 합니다.")
+        embed.add_field(
+            name="사용 예시",
+            value="!캐릭터 실바나스-아즈샤라")
+        if SERVER.exists(config.get("default_server")):
+            embed.set_footer(
+                text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
+                    SERVER.KR(config.get("default_server"))))
+        await ctx.send(embed=embed)
+        return
+
+    character_name, server_name = utils.parse_character_name(args[0])
     if not SERVER.exists(server_name):
-        msg = await ctx.send(
+        await ctx.send(
             embed=discord.Embed(
                 title="실행 오류",
                 color=COLOR.RED,
@@ -50,7 +66,7 @@ async def _character(ctx, arg:str):
     res = await run()
 
     if None in res:
-        msg = await msg.edit(
+        await msg.edit(
             embed=discord.Embed(
                 title="실행 오류",
                 color=COLOR.RED,
@@ -113,6 +129,7 @@ async def _character(ctx, arg:str):
 
 @bot.command(name="어픽스")
 async def _affixes(ctx):
+    await ctx.trigger_typing()
     msg = await ctx.send(
         embed=discord.Embed(
             title="불러오는 중",
@@ -121,7 +138,7 @@ async def _affixes(ctx):
 
     res = await Raider.get_weekly_affixes()
     if res is None:
-        msg = await msg.edit(
+        await msg.edit(
             embed=discord.Embed(
                 title="실행 오류",
                 color=COLOR.RED,
@@ -143,8 +160,8 @@ async def _affixes(ctx):
 
 
 @tasks.loop(seconds=60)
-async def change_token():
-    # Changes Blizzard api access token every 60 seconds.
+async def timing_task():
+    # EXAMPLE
     await Blizzard.change_access_token()
 
 
@@ -153,5 +170,4 @@ if __name__ == "__main__":
     if token is None:
         logger.error("Failed to get discord token.")
     else:
-        change_token.start()
         bot.run(token)
