@@ -8,7 +8,7 @@ import config
 import logger
 from params import *
 from raider import Raider
-from blizzard import Blizzard
+from blizzard import Blizzard, init_params
 
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
@@ -17,13 +17,9 @@ bot = commands.Bot(command_prefix=config.get("command_prefix"))
 @bot.event
 async def on_ready():
     logger.info("Logged in as {}".format(bot.user.name))
+    await init_params()
     game = discord.Game(name=config.get("profile_playing"))
     await bot.change_presence(activity=game)
-
-
-@bot.event
-async def on_error(event, *args, **kwargs):
-    logger.error("Error occurred from event '{}'".format(event))
 
 
 @bot.event
@@ -146,7 +142,7 @@ async def _character(ctx, *args):
 
 
 @bot.command(name="어픽스")
-@commands.cooldown(3, 60, commands.BucketType.user)
+@commands.cooldown(10, 60, commands.BucketType.user)
 async def _affixes(ctx):
     await ctx.trigger_typing()
     msg = await ctx.send(
@@ -177,6 +173,45 @@ async def _affixes(ctx):
             value=affix["description"])
 
     msg = await msg.edit(embed=embed)
+
+
+@bot.command(name="경매장")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _auction(ctx, *args):
+    await ctx.trigger_typing()
+    if len(args) == 0:
+        embed = discord.Embed(
+            title="명령어 오류",
+            color=COLOR.RED,
+            description="명령어 뒤에 '(약초/광석/영약/물약/요리) 서버 이름'을 적어야 합니다.")
+        embed.add_field(
+            name="사용 예시",
+            value="!경매장 영약 아즈샤라")
+        if SERVER.exists(config.get("default_server")):
+            embed.set_footer(
+                text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
+                    SERVER.KR(config.get("default_server"))))
+        await ctx.send(embed=embed)
+        return
+
+    item_flag = args[0]
+    server_name = args[1] if len(args) > 1 else SERVER.EN(config.get("default_server"))
+    
+    if not SERVER.exists(server_name):
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="존재하지 않는 서버 이름입니다."))
+        return
+
+    msg = await ctx.send(
+        embed=discord.Embed(
+            title="불러오는 중",
+            color=COLOR.GRAY,
+            description="경매장 정보를 불러오는 중입니다."))
+
+    # TODO
 
 
 @tasks.loop(seconds=60)

@@ -15,6 +15,8 @@ class Blizzard:
     THUMBNAIL_BASE = "https://render-kr.worldofwarcraft.com/character"
     _token = None
 
+    item_info = dict()
+
     @classmethod
     async def change_access_token(cls):
         query = "?grant_type=client_credentials&client_id={}&client_secret={}".format(
@@ -56,8 +58,131 @@ class Blizzard:
             if response.status == 200:
                 return await response.json()
             else:
-                if await cls.check_access_token() and not revisited:
+                if not revisited and await cls.check_access_token():
                     return await cls.get_character(
                         server_name, character_name, revisited=True)
                 logger.error("Failed to get character from blizzard.")
                 return None
+
+    @classmethod
+    async def get_auction_url(cls, server_name, revisited=False):
+        query = "?access_token={}&locale=ko_KR".format(cls._token)
+        url = encode("{}/wow/auction/data/{}".format(cls.BASE, server_name), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_auction_url(server_name, revisited=True)
+                logger.error("Failed to get auction url from blizzard.")
+                return None
+
+    @classmethod
+    async def get_auction_data(cls, url, revisited=False):
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_auction_data(url, revisited=True)
+                logger.error("Failed to get auction data from blizzard.")
+                return None
+
+    @classmethod
+    async def get_item(cls, item_id, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "namespace=static-kr&locale=ko_KR"
+        url = encode("{}/data/wow/item/{}".format(cls.BASE, item_id), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_item(item_id, revisited=True)
+                logger.error("Failed to get item from blizzard.")
+                return None
+
+    @classmethod
+    async def get_auction(cls, item_flag, server_name):
+        auction = await cls.get_auction_url(server_name)
+        if aution is None:
+            return None
+        res = await cls.get_auction_data(auction["files"][0]["url"])
+        if res is None:
+            return None
+
+        for i in res["auctions"]:
+            if not i["item"] in cls.auction_info:
+                item = await cls.get_item(i["item"])
+                if item is not None:
+                    cls.auction_info[i["item"]] = {
+                        "name": item["name"],
+                        "level": item["level"],
+                        "class": item["item_class"]["name"],
+                        "sub_class": item["item_subclass"]["name"]}
+            else:
+                item = cls.auction_info[i["item"]]
+
+        # TODO : 경매장 아이템과 해당 아이템의 최저가격 정리
+        #        임시 메모리에 저장하여 일정 기간 저장
+
+    @classmethod
+    async def get_races(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=static-kr&locale=ko_KR"
+        url = encode("{}/data/wow/playable-race/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_races(revisited=True)
+                logger.error("Failed to get races from blizzard.")
+                return None
+
+    @classmethod
+    async def get_realms(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=dynamic-kr&locale=ko_KR"
+        url = encode("{}/data/wow/realm/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_realms(revisited=True)
+                logger.error("Failed to get realms from blizzard.")
+                return None
+
+    @classmethod
+    async def get_classes(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=static-kr&locale=ko_KR"
+        url = encode("{}/data/wow/playable-class/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_classes(revisited=True)
+                logger.error("Failed to get classes from blizzard.")
+                return None
+
+
+async def init_params():
+    races = await Blizzard.get_races()
+    for i in races["races"]:
+        RACE._races[i["id"]] = i["name"]
+
+    realms = await Blizzard.get_realms()
+    for i in realms["realms"]:
+        SERVER._servers[i["name"]] = i["slug"]
+
+    classes = await Blizzard.get_classes()
+    for i in classes["classes"]:
+        CLASS._classes[i["id"]] = i["name"]

@@ -15,26 +15,7 @@ class GAME_ICON:
     MYTHIC_PLUS = "https://wow.zamimg.com/images/wow/icons/large/inv_relics_hourglass.jpg"
 
 class SERVER:
-    _servers = {
-        "아즈샤라": "Azshara",
-        "듀로탄": "Durotan",
-        "헬스크림": "Hellscream",
-        "하이잘": "Hyjal",
-        "알렉스트라자": "Alexstrasza",
-        "데스윙": "Deathwing",
-        "불타는군단": "Burning Legion",
-        "스톰레이지": "Stormrage",
-        "세나리우스": "Cenarius",
-        "달라란": "Dalaran",
-        "말퓨리온": "Malfurion",
-        "노르간논": "Norgannon",
-        "가로나": "Garona",
-        "굴단": "Gul'dan",
-        "줄진": "Zul'jin",
-        "렉사르": "Rexxar",
-        "와일드해머": "Wildhammer",
-        "윈드러너": "Windrunner",
-    }
+    _servers = dict()
 
     @classmethod
     def exists(cls, name):
@@ -60,30 +41,7 @@ class SERVER:
         return None
 
 class RACE:
-    _races = {
-        1: "인간",
-        2: "오크",
-        3: "드워프",
-        4: "나이트엘프",
-        5: "언데드",
-        6: "타우렌",
-        7: "노움",
-        8: "트롤",
-        9: "고블린",
-        10: "블러드엘프",
-        11: "드레나이",
-        24: "판다렌",
-        25: "판다렌",
-        26: "판다렌",
-        27: "나이트본",
-        28: "높은산타우렌",
-        29: "공허엘프",
-        30: "빛벼림드레나이",
-        31: "잔달라트롤",
-        32: "쿨티란",
-        34: "검은무쇠드워프",
-        36: "마그하르오크",
-    }
+    _races = dict()
 
     @classmethod
     def ID(cls, arg):
@@ -103,20 +61,7 @@ class RACE:
         return None
 
 class CLASS:
-    _classes = {
-        1: "전사",
-        2: "성기사",
-        3: "사냥꾼",
-        4: "도적",
-        5: "사제",
-        6: "죽음의기사",
-        7: "주술사",
-        8: "마법사",
-        9: "흑마법사",
-        10: "수도사",
-        11: "드루이드",
-        12: "악마사냥꾼",
-    }
+    _classes = dict()
 
     @classmethod
     def ID(cls, arg):
@@ -167,9 +112,9 @@ class DUNGEON:
         return None
 
 
-
 REGION = "kr"
 LOCALE = "ko"
+MAX_LEVEL = 120
 MYTHIC_PLUS_RESULTS = {
     0: "소진",
     1: "시간내클리어+1", 
