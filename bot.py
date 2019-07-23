@@ -51,15 +51,15 @@ async def _character(ctx, *args):
         embed.add_field(
             name="사용 예시",
             value="!캐릭터 실바나스-아즈샤라")
-        if SERVER.exists(config.get("default_server")):
+        if REALM.exists(config.get("default_realm")):
             embed.set_footer(
                 text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
-                    SERVER.KR(config.get("default_server"))))
+                    REALM.KR(config.get("default_realm"))))
         await ctx.send(embed=embed)
         return
 
-    character_name, server_name = utils.parse_character_name(args[0])
-    if not SERVER.exists(server_name):
+    character_name, realm_name = utils.parse_character_name(args[0])
+    if not REALM.exists(realm_name):
         await ctx.send(
             embed=discord.Embed(
                 title="실행 오류",
@@ -75,8 +75,8 @@ async def _character(ctx, *args):
 
     async def run():
         return await asyncio.gather(
-            Raider.get_character(server_name, character_name),
-            Blizzard.get_character(server_name, character_name))
+            Raider.get_character(realm_name, character_name),
+            Blizzard.get_character(realm_name, character_name))
     res = await run()
 
     if None in res:
@@ -187,17 +187,17 @@ async def _auction(ctx, *args):
         embed.add_field(
             name="사용 예시",
             value="!경매장 영약 아즈샤라")
-        if SERVER.exists(config.get("default_server")):
+        if REALM.exists(config.get("default_realm")):
             embed.set_footer(
                 text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
-                    SERVER.KR(config.get("default_server"))))
+                    REALM.KR(config.get("default_realm"))))
         await ctx.send(embed=embed)
         return
 
     item_flag = args[0]
-    server_name = args[1] if len(args) > 1 else SERVER.EN(config.get("default_server"))
+    realm_name = args[1] if len(args) > 1 else REALM.EN(config.get("default_realm"))
     
-    if not SERVER.exists(server_name):
+    if not REALM.exists(realm_name):
         await ctx.send(
             embed=discord.Embed(
                 title="실행 오류",

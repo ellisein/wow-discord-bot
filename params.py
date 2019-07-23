@@ -14,30 +14,30 @@ class RAID_DIFFICULTIES:
 class GAME_ICON:
     MYTHIC_PLUS = "https://wow.zamimg.com/images/wow/icons/large/inv_relics_hourglass.jpg"
 
-class SERVER:
-    _servers = dict()
+class REALM:
+    _realms = dict()
 
     @classmethod
     def exists(cls, name):
-        if name in cls._servers or name in cls._servers.values():
+        if name in cls._realms or name in cls._realms.values():
             return True
         return False
 
     @classmethod
     def KR(cls, arg):
-        if arg in cls._servers:
+        if arg in cls._realms:
             return arg
-        for k, v in cls._servers.items():
+        for k, v in cls._realms.items():
             if v == arg:
                 return k
         return None
 
     @classmethod
     def EN(cls, arg):
-        if arg in cls._servers.values():
+        if arg in cls._realms.values():
             return arg
-        if arg in cls._servers:
-            return cls._servers[arg]
+        if arg in cls._realms:
+            return cls._realms[arg]
         return None
 
 class RACE:

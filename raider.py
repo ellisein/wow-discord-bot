@@ -27,9 +27,9 @@ class Raider:
                 return None
 
     @classmethod
-    async def get_character(cls, server_name, character_name):
+    async def get_character(cls, realm_name, character_name):
         query = "?region={}".format(REGION) \
-                + "&realm={}".format(SERVER.EN(server_name)) \
+                + "&realm={}".format(REALM.EN(realm_name)) \
                 + "&name={}".format(character_name) \
                 + "&fields=gear,mythic_plus_scores_by_season:current," \
                 + "mythic_plus_weekly_highest_level_runs"

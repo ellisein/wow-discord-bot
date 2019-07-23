@@ -48,11 +48,11 @@ class Blizzard:
         return False
 
     @classmethod
-    async def get_character(cls, server_name, character_name, revisited=False):
+    async def get_character(cls, realm_name, character_name, revisited=False):
         query = "?access_token={}".format(cls._token) \
                 + "&fields=items,stats,talents,guild,progression"
         url = encode("{}/wow/character/{}/{}".format(
-            cls.BASE, SERVER.EN(server_name), character_name), query)
+            cls.BASE, REALM.EN(realm_name), character_name), query)
 
         async with get_session().get(url) as response:
             if response.status == 200:
@@ -60,21 +60,21 @@ class Blizzard:
             else:
                 if not revisited and await cls.check_access_token():
                     return await cls.get_character(
-                        server_name, character_name, revisited=True)
+                        realm_name, character_name, revisited=True)
                 logger.error("Failed to get character from blizzard.")
                 return None
 
     @classmethod
-    async def get_auction_url(cls, server_name, revisited=False):
+    async def get_auction_url(cls, realm_name, revisited=False):
         query = "?access_token={}&locale=ko_KR".format(cls._token)
-        url = encode("{}/wow/auction/data/{}".format(cls.BASE, server_name), query)
+        url = encode("{}/wow/auction/data/{}".format(cls.BASE, realm_name), query)
 
         async with get_session().get(url) as response:
             if response.status == 200:
                 return await response.json()
             else:
                 if not revisited and await cls.check_access_token():
-                    return await cls.get_auction_url(server_name, revisited=True)
+                    return await cls.get_auction_url(realm_name, revisited=True)
                 logger.error("Failed to get auction url from blizzard.")
                 return None
 
@@ -105,8 +105,8 @@ class Blizzard:
                 return None
 
     @classmethod
-    async def get_auction(cls, item_flag, server_name):
-        auction = await cls.get_auction_url(server_name)
+    async def get_auction(cls, item_flag, realm_name):
+        auction = await cls.get_auction_url(realm_name)
         if aution is None:
             return None
         res = await cls.get_auction_data(auction["files"][0]["url"])
@@ -181,7 +181,7 @@ async def init_params():
 
     realms = await Blizzard.get_realms()
     for i in realms["realms"]:
-        SERVER._servers[i["name"]] = i["slug"]
+        REALM._realms[i["name"]] = i["slug"]
 
     classes = await Blizzard.get_classes()
     for i in classes["classes"]:
