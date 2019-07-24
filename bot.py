@@ -1,5 +1,6 @@
 import sys
 import asyncio
+from datetime import datetime
 import discord
 from discord.ext import commands, tasks
 
@@ -13,11 +14,27 @@ from blizzard import Blizzard, init_params
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
 
+"""
+명령어
+
+!명령어 : 모든 가능한 명령어 출력
+!캐릭터 (캐릭터이름)-(서버이름) : 캐릭터 정보 조회
+!어픽스 : 금주의 쐐기돌 던전 어픽스 조회
+!경매장 (종류) (서버) : 경매장 각 아이템의 최저가격 조회
+!장신구 (직업) : 장신구 순위 조회
+!아제특성 (직업) : 아제라이트 특성 순위 조회
+!특성 (직업) : 특성 순위 조회
+!정수 (직업) : 정수 순위 조회
+!스탯 (직업) : 2차 스탯 우선순위 조회
+!토큰 : 토큰 가격 조회
+"""
+
 
 @bot.event
 async def on_ready():
     logger.info("Logged in as {}".format(bot.user.name))
     await init_params()
+
     game = discord.Game(name=config.get("profile_playing"))
     await bot.change_presence(activity=game)
 
@@ -31,12 +48,28 @@ async def on_command_error(ctx, exception):
                 color=COLOR.RED,
                 description="짧은 시간 동안 너무 많은 명령어를 입력하였습니다." \
                     + "\n잠시 후 다시 시도해주세요."))
+    elif type(exception) == commands.errors.CommandNotFound:
+        pass
     else:
         await ctx.send(
             embed=discord.Embed(
                 title="명령어 오류",
                 color=COLOR.RED,
-                description=exception))
+                description=str(exception)))
+
+
+@bot.command(name="명령어")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _commands(ctx, *args):
+    commands = ["!{}".format(c.name) for c in bot.commands]
+    if "!help" in commands:
+        commands.remove("!help")
+
+    await ctx.send(
+        embed=discord.Embed(
+            title="사용 가능한 명령어",
+            color=COLOR.BLUE,
+            description=", ".join(commands)))
 
 
 @bot.command(name="캐릭터")
@@ -67,12 +100,6 @@ async def _character(ctx, *args):
                 description="존재하지 않는 서버 이름입니다."))
         return
 
-    msg = await ctx.send(
-        embed=discord.Embed(
-            title="불러오는 중",
-            color=COLOR.GRAY,
-            description="캐릭터 정보를 불러오는 중입니다."))
-
     async def run():
         return await asyncio.gather(
             Raider.get_character(realm_name, character_name),
@@ -80,7 +107,7 @@ async def _character(ctx, *args):
     res = await run()
 
     if None in res:
-        await msg.edit(
+        await ctx.send(
             embed=discord.Embed(
                 title="실행 오류",
                 color=COLOR.RED,
@@ -138,41 +165,48 @@ async def _character(ctx, *args):
             heroic_kills, boss_count,
             mythic_kills, boss_count))
 
-    msg = await msg.edit(embed=embed)
+    await ctx.send(embed=embed)
 
 
 @bot.command(name="어픽스")
 @commands.cooldown(10, 60, commands.BucketType.user)
 async def _affixes(ctx):
     await ctx.trigger_typing()
-    msg = await ctx.send(
-        embed=discord.Embed(
-            title="불러오는 중",
-            color=COLOR.GRAY,
-            description="이번주 쐐기 던전 어픽스 정보를 불러오는 중입니다."))
 
-    res = await Raider.get_weekly_affixes()
+    async def run():
+        return await asyncio.gather(
+            Raider.get_weekly_affixes(),
+            Blizzard.get_mythic_keystone_period())
+    res = await run()
 
-    if res is None:
-        await msg.edit(
+    if res[0] is None:
+        await ctx.send(
             embed=discord.Embed(
                 title="실행 오류",
                 color=COLOR.RED,
                 description="이번주 쐐기 던전 어픽스 정보를 불러오는 데 실패했습니다."))
         return
 
+    period = ""
+    if res[1] is not None:
+        start = datetime.fromtimestamp(int(res[1]["start_timestamp"] / 1000))
+        end = datetime.fromtimestamp(int(res[1]["end_timestamp"] / 1000))
+        period = "{} ~ {}".format(
+            start.strftime("%Y-%m-%d %H:%M"),
+            end.strftime("%Y-%m-%d %H:%M"))
+
     embed = discord.Embed(
         title="이번주 쐐기 던전 어픽스",
         color=COLOR.BLUE,
-        description="")
+        description=period)
     embed.set_thumbnail(url=GAME_ICON.MYTHIC_PLUS)
 
-    for affix in res["affix_details"]:
+    for affix in res[0]["affix_details"]:
         embed.add_field(
             name=affix["name"],
             value=affix["description"])
 
-    msg = await msg.edit(embed=embed)
+    await ctx.send(embed=embed)
 
 
 @bot.command(name="경매장")
@@ -205,13 +239,28 @@ async def _auction(ctx, *args):
                 description="존재하지 않는 서버 이름입니다."))
         return
 
-    msg = await ctx.send(
-        embed=discord.Embed(
-            title="불러오는 중",
-            color=COLOR.GRAY,
-            description="경매장 정보를 불러오는 중입니다."))
-
     # TODO
+
+
+@bot.command(name="토큰")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _token(ctx, *args):
+    await ctx.trigger_typing()
+    res = await Blizzard.get_token_price()
+
+    if res is None:
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="토큰 가격 정보를 불러오는 데 실패했습니다."))
+        return
+
+    await ctx.send(
+        embed=discord.Embed(
+            title="한국 서버 토큰 시세",
+            color=COLOR.BLUE,
+            description="{}골드".format(int(res["price"] / 10000))))
 
 
 @tasks.loop(seconds=60)

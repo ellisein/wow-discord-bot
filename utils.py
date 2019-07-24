@@ -12,7 +12,7 @@ def encode(base, url):
 def parse_character_name(arg):
     cnt = arg.count("-")
     if cnt < 1:
-        return arg, config.get("default_server")
+        return arg, config.get("default_realm")
     elif cnt == 1:
         return arg.split("-")
     else:

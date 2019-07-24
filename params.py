@@ -81,30 +81,19 @@ class CLASS:
         return None
 
 class DUNGEON:
-    _dungeons = {
-        "Siege of Boralus": "보랄러스 공성전",
-        "Waycrest Manor": "웨이크레스트 저택",
-        "The Underrot": "썩은굴",
-        "Tol Dagor": "톨 다고르",
-        "Freehold": "자유지대",
-        "The MOTHERLODE!!": "왕노다지 광산!!",
-        "Shrine of the Storm": "폭풍의 사원",
-        "Atal'dazar": "아탈다자르",
-        "Kings' Rest": "왕들의 안식처",
-        "Temple of Sethraliss": "세스랄리스 사원",
-    }
+    _dungeons = dict()
 
     @classmethod
     def KR(cls, arg):
         if arg in cls._dungeons.values():
             return arg
-        if arg in cls._dungeons:
-            return cls._dungeons[arg]
+        if arg.lower() in cls._dungeons:
+            return cls._dungeons[arg.lower()]
         return None
 
     @classmethod
     def EN(cls, arg):
-        if arg in cls._dungeons:
+        if arg.lower() in cls._dungeons:
             return arg
         for k, v in cls._dungeons.items():
             if v == arg:

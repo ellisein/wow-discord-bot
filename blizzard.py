@@ -6,7 +6,7 @@ from utils import encode
 import logger
 import config
 from params import *
-from session import get_session
+from session import get_session, static_result
 
 
 class Blizzard:
@@ -173,6 +173,79 @@ class Blizzard:
                 logger.error("Failed to get classes from blizzard.")
                 return None
 
+    @classmethod
+    async def get_dungeons_kr(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=dynamic-kr&locale=ko_KR"
+        url = encode("{}/data/wow/mythic-keystone/dungeon/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_dungeons_kr(revisited=True)
+                logger.error("Failed to get dungeons from blizzard.")
+                return None
+
+    @classmethod
+    async def get_dungeons_en(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=dynamic-kr&locale=en_US"
+        url = encode("{}/data/wow/mythic-keystone/dungeon/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_dungeons_en(revisited=True)
+                logger.error("Failed to get dungeons from blizzard.")
+                return None
+
+    @classmethod
+    async def get_mythic_keystone_period(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=dynamic-kr&locale=ko_KR"
+        url = encode("{}/data/wow/mythic-keystone/period/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                period = await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    period = await cls.get_mythic_keystone_period(revisited=True)
+                logger.error("Failed to get mythic keystone period from blizzard.")
+                return None
+
+        url = encode("{}/data/wow/mythic-keystone/period/{}".format(
+            cls.BASE, period["current_period"]["id"]), query)
+        
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_mythic_keystone_period(revisited=True)
+                logger.error("Failed to get mythic keystone period from blizzard.")
+                return None
+
+    @classmethod
+    @static_result(600)
+    async def get_token_price(cls, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=dynamic-kr&locale=ko_KR"
+        url = encode("{}/data/wow/token/index".format(cls.BASE), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_token_price(revisited=True)
+                logger.error("Failed to get token price from blizzard.")
+                return None
+
 
 async def init_params():
     races = await Blizzard.get_races()
@@ -186,3 +259,12 @@ async def init_params():
     classes = await Blizzard.get_classes()
     for i in classes["classes"]:
         CLASS._classes[i["id"]] = i["name"]
+
+    dungeons = dict()
+    dungeons_kr = await Blizzard.get_dungeons_kr()
+    dungeons_en = await Blizzard.get_dungeons_en()
+    for i in dungeons_en["dungeons"]:
+        dungeons[i["id"]] = i["name"].lower()
+    for i in dungeons_kr["dungeons"]:
+        if i["id"] in dungeons:
+            DUNGEON._dungeons[dungeons[i["id"]]] = i["name"]
