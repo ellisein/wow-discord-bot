@@ -100,6 +100,14 @@ class DUNGEON:
                 return k
         return None
 
+class WCL_SPEC:
+    def __init__(self, class_id, spec_id, name_en, icon, abbreviations):
+        self.class_id = class_id
+        self.spec_id = spec_id
+        self.name_en = name_en
+        self.icon = icon
+        self.abbreviations = abbreviations
+
 class WCL_CLASS:
     _classes = {
         "혈기 죽음의기사": WCL_SPEC(1, 1, "death_knight_blood",
@@ -175,14 +183,6 @@ class WCL_CLASS:
         "복수 악마사냥꾼": WCL_SPEC(12, 2, "demon_hunter_vengeance",
             "ability_demonhunter_spectank", ["악탱"]),
     }
-
-class WCL_SPEC:
-    def __init__(self, class_id, spec_id, name_en, icon):
-        self.class_id = class_id
-        self.spec_id = spec_id
-        self.name_en = name_en
-        self.icon = icon
-        self.abbreviations = abbreviations
 
 def thumbnail(name):
     return "https://wow.zamimg.com/images/wow/icons/large/{}.jpg".format(name)
