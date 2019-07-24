@@ -9,7 +9,8 @@ import config
 import logger
 from params import *
 from raider import Raider
-from blizzard import Blizzard, init_params
+from blizzard import Blizzard
+from warcraftlogs import Warcraftlogs
 
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
@@ -28,6 +29,28 @@ bot = commands.Bot(command_prefix=config.get("command_prefix"))
 !스탯 (직업) : 2차 스탯 우선순위 조회
 !토큰 : 토큰 가격 조회
 """
+
+async def init_params():
+    races = await Blizzard.get_races()
+    for i in races["races"]:
+        RACE._races[i["id"]] = i["name"]
+
+    realms = await Blizzard.get_realms()
+    for i in realms["realms"]:
+        REALM._realms[i["name"]] = i["slug"]
+
+    classes = await Blizzard.get_classes()
+    for i in classes["classes"]:
+        CLASS._classes[i["id"]] = i["name"]
+
+    dungeons = dict()
+    dungeons_kr = await Blizzard.get_dungeons_kr()
+    dungeons_en = await Blizzard.get_dungeons_en()
+    for i in dungeons_en["dungeons"]:
+        dungeons[i["id"]] = i["name"].lower()
+    for i in dungeons_kr["dungeons"]:
+        if i["id"] in dungeons:
+            DUNGEON._dungeons[dungeons[i["id"]]] = i["name"]
 
 
 @bot.event
@@ -199,7 +222,7 @@ async def _affixes(ctx):
         title="이번주 쐐기 던전 어픽스",
         color=COLOR.BLUE,
         description=period)
-    embed.set_thumbnail(url=GAME_ICON.MYTHIC_PLUS)
+    embed.set_thumbnail(url=thumbnail(GAME_ICON.MYTHIC_KEYSTONE))
 
     for affix in res[0]["affix_details"]:
         embed.add_field(

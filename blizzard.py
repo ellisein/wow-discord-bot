@@ -245,26 +245,3 @@ class Blizzard:
                     return await cls.get_token_price(revisited=True)
                 logger.error("Failed to get token price from blizzard.")
                 return None
-
-
-async def init_params():
-    races = await Blizzard.get_races()
-    for i in races["races"]:
-        RACE._races[i["id"]] = i["name"]
-
-    realms = await Blizzard.get_realms()
-    for i in realms["realms"]:
-        REALM._realms[i["name"]] = i["slug"]
-
-    classes = await Blizzard.get_classes()
-    for i in classes["classes"]:
-        CLASS._classes[i["id"]] = i["name"]
-
-    dungeons = dict()
-    dungeons_kr = await Blizzard.get_dungeons_kr()
-    dungeons_en = await Blizzard.get_dungeons_en()
-    for i in dungeons_en["dungeons"]:
-        dungeons[i["id"]] = i["name"].lower()
-    for i in dungeons_kr["dungeons"]:
-        if i["id"] in dungeons:
-            DUNGEON._dungeons[dungeons[i["id"]]] = i["name"]

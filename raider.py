@@ -8,8 +8,6 @@ from params import *
 from session import get_session, static_result
 
 
-_session = aiohttp.ClientSession()
-
 class Raider:
     BASE = "https://raider.io/api/v1"
 
@@ -23,7 +21,7 @@ class Raider:
             if response.status == 200:
                 return await response.json()
             else:
-                logger.error("Failed to get weekly affixes.")
+                logger.error("Failed to get weekly affixes from raider.")
                 return None
 
     @classmethod
