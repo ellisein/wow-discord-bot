@@ -12,6 +12,7 @@ from params import *
 from raider import Raider
 from blizzard import Blizzard
 from warcraftlogs import Warcraftlogs
+from session import static_result
 
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
@@ -192,7 +193,53 @@ async def _character(ctx, *args):
     await ctx.send(embed=embed)
 
 
+@bot.command(name="외형")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _appearance(ctx, *args):
+    await ctx.trigger_typing()
+    if len(args) == 0:
+        embed = discord.Embed(
+            title="명령어 오류",
+            color=COLOR.RED,
+            description="명령어 뒤에 '(캐릭터 이름)-(서버 이름)'을 적어야 합니다.")
+        embed.add_field(
+            name="사용 예시",
+            value="!외형 팬더곰-헬스크림")
+        if REALM.exists(config.get("default_realm")):
+            embed.set_footer(
+                text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
+                    REALM.KR(config.get("default_realm"))))
+        await ctx.send(embed=embed)
+        return
+
+    character_name, realm_name = utils.parse_character_name(args[0])
+    if not REALM.exists(realm_name):
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="존재하지 않는 서버 이름입니다."))
+        return
+
+    res = await Blizzard.get_character_media(realm_name, character_name)
+    if res is None:
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="플레이어를 찾을 수 없습니다."))
+        return
+
+    embed = discord.Embed(
+        title=character_name,
+        color=COLOR.BLUE,
+        description="")
+    embed.set_image(url=res["render_url"])
+    await ctx.send(embed=embed)
+
+
 @bot.command(name="어픽스")
+@static_result(600)
 @commands.cooldown(10, 60, commands.BucketType.user)
 async def _affixes(ctx):
     await ctx.trigger_typing()
@@ -209,7 +256,7 @@ async def _affixes(ctx):
                 title="실행 오류",
                 color=COLOR.RED,
                 description="이번주 쐐기 던전 어픽스 정보를 불러오는 데 실패했습니다."))
-        return
+        return None
 
     period = ""
     if res[1] is not None:
@@ -231,6 +278,7 @@ async def _affixes(ctx):
             value=affix["description"])
 
     await ctx.send(embed=embed)
+    return embed
 
 
 @bot.command(name="경매장")
@@ -267,6 +315,7 @@ async def _auction(ctx, *args):
 
 
 @bot.command(name="토큰")
+@static_result(600)
 @commands.cooldown(10, 60, commands.BucketType.user)
 async def _token(ctx, *args):
     await ctx.trigger_typing()
@@ -278,13 +327,14 @@ async def _token(ctx, *args):
                 title="실행 오류",
                 color=COLOR.RED,
                 description="토큰 가격 정보를 불러오는 데 실패했습니다."))
-        return
+        return None
 
-    await ctx.send(
-        embed=discord.Embed(
-            title="한국 서버 토큰 시세",
-            color=COLOR.BLUE,
-            description="{}골드".format(int(res["price"] / 10000))))
+    embed = discord.Embed(
+        title="한국 서버 토큰 시세",
+        color=COLOR.BLUE,
+        description="{}골드".format(int(res["price"] / 10000)))
+    await ctx.send(embed=embed)
+    return embed
 
 
 @bot.command(name="특성")

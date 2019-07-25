@@ -5,14 +5,13 @@ from utils import encode
 import logger
 import config
 from params import *
-from session import get_session, static_result
+from session import get_session
 
 
 class Raider:
     BASE = "https://raider.io/api/v1"
 
     @classmethod
-    @static_result(600)
     async def get_weekly_affixes(cls):
         query = "?region={}&locale={}".format(REGION, LOCALE)
         url = encode("{}/mythic-plus/affixes".format(cls.BASE), query)

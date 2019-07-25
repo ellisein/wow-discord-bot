@@ -43,23 +43,27 @@ def static_result(refresh_time:int):
     def decorator(f):
         @wraps(f)
         async def wrapper(*args, **kwargs):
+            ctx = args[0]
             fname = "{}({})".format(f.__name__, ",".join(args[1:]))
             if fname in _instant_result:
                 last_updated = _instant_result[fname]["last_updated"]
                 if datetime.now() > last_updated + timedelta(seconds=refresh_time):
                     result = await f(*args, **kwargs)
-                    _instant_result[fname] = {
-                        "last_updated": datetime.now(),
-                        "result": result}
+                    if result is not None:
+                        _instant_result[fname] = {
+                            "last_updated": datetime.now(),
+                            "result": result}
                     return result
                 else:
                     logger.debug("Returned previous data for '{}'.".format(fname))
+                    await ctx.send(embed=_instant_result[fname]["result"])
                     return _instant_result[fname]["result"]
             else:
                 result = await f(*args, **kwargs)
-                _instant_result[fname] = {
-                    "last_updated": datetime.now(),
-                    "result": result}
+                if result is not None:
+                    _instant_result[fname] = {
+                        "last_updated": datetime.now(),
+                        "result": result}
                 return result
         return wrapper
     return decorator
