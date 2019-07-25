@@ -1,3 +1,4 @@
+import re
 import sys
 import asyncio
 from datetime import datetime
@@ -103,10 +104,10 @@ async def _character(ctx, *args):
         embed = discord.Embed(
             title="명령어 오류",
             color=COLOR.RED,
-            description="명령어 뒤에 '캐릭터 이름-서버 이름'을 적어야 합니다.")
+            description="명령어 뒤에 '(캐릭터 이름)-(서버 이름)'을 적어야 합니다.")
         embed.add_field(
             name="사용 예시",
-            value="!캐릭터 실바나스-아즈샤라")
+            value="!캐릭터 팬더곰-헬스크림")
         if REALM.exists(config.get("default_realm")):
             embed.set_footer(
                 text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
@@ -240,7 +241,7 @@ async def _auction(ctx, *args):
         embed = discord.Embed(
             title="명령어 오류",
             color=COLOR.RED,
-            description="명령어 뒤에 '(약초/광석/영약/물약/요리) 서버 이름'을 적어야 합니다.")
+            description="명령어 뒤에 '(약초/광석/영약/물약/요리) (서버 이름)'을 적어야 합니다.")
         embed.add_field(
             name="사용 예시",
             value="!경매장 영약 아즈샤라")
@@ -284,6 +285,113 @@ async def _token(ctx, *args):
             title="한국 서버 토큰 시세",
             color=COLOR.BLUE,
             description="{}골드".format(int(res["price"] / 10000))))
+
+
+@bot.command(name="특성")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _token(ctx, *args):
+    await ctx.trigger_typing()
+    if len(args) == 0:
+        embed = discord.Embed(
+            title="명령어 오류",
+            color=COLOR.RED,
+            description="명령어 뒤에 '(캐릭터 이름)-(서버 이름)'을 적어야 합니다.")
+        embed.add_field(
+            name="사용 예시",
+            value="!특성 팬더곰-헬스크림 : 캐릭터의 각 전문화 특성을 확인합니다.\n" \
+                + "!특성 팬더곰-헬스크림 비법 : 캐릭터의 해당 전문화 특성을 확인합니다.")
+        if REALM.exists(config.get("default_realm")):
+            embed.set_footer(
+                text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
+                    REALM.KR(config.get("default_realm"))))
+        await ctx.send(embed=embed)
+        return
+
+    character_name, realm_name = utils.parse_character_name(args[0])
+    if not REALM.exists(realm_name):
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="존재하지 않는 서버 이름입니다."))
+        return
+
+    res = await Blizzard.get_character_talents(
+        realm_name, character_name)
+
+    if len(args) > 1:
+        spec = WCL_CLASS.get_by_abbreviation(args[1])
+        if spec is not None:
+            # !특성 (캐릭터이름) (전문화)
+            embed = discord.Embed(
+                title="{}-{}의 특성 정보".format(character_name, REALM.KR(realm_name)),
+                color=COLOR.BLUE,
+                description="")
+
+            found = False
+            for talent in res["talents"]:
+                if "spec" in talent and talent["spec"]["name"] in spec.abbreviations:
+                    selected = [None] * 7
+                    for t in talent["talents"]:
+                        selected[t["tier"]] = [
+                            t["spell"]["name"],
+                            t["spell"]["description"]]
+                    for i, s in enumerate(selected):
+                        if s is not None:
+                            s[1] = re.sub("(\\r\\n)+|(\\n\\n)+", " ", s[1])
+                            s[1] = re.sub(r"T\d+:\d+", "", s[1])
+                            embed.add_field(
+                                name="[{}] {}".format(TALENTS_REQUIRED_LEVEL[i], s[0]),
+                                value=s[1])
+                    found = True
+
+            if not found:
+                await ctx.send(
+                    embed=discord.Embed(
+                        title="실행 오류",
+                        color=COLOR.RED,
+                        description="캐릭터와 전문화가 일치하지 않습니다."))
+                return
+
+            if None in selected:
+                await ctx.send(
+                    embed=discord.Embed(
+                        title="실행 오류",
+                        color=COLOR.RED,
+                        description="해당 캐릭터가 전문화의 모든 특성을 선택하지 않았습니다."))
+                return
+
+            embed.set_thumbnail(url=thumbnail(spec.icon))
+            await ctx.send(embed=embed)
+
+        else:
+            await ctx.send(
+                embed=discord.Embed(
+                    title="실행 오류",
+                    color=COLOR.RED,
+                    description="등록되지 않은 전문화 이름입니다."))
+            return
+    
+    else:
+        # !특성 (캐릭터이름)
+        embed = discord.Embed(
+            title="{}-{}의 특성 정보".format(character_name, REALM.KR(realm_name)),
+            color=COLOR.BLUE,
+            description="")
+
+        for talent in res["talents"]:
+            if not "spec" in talent:
+                continue
+            main_spec = True if "selected" in talent and talent["selected"] else False
+            selected = [None] * 7
+            for t in talent["talents"]:
+                selected[t["tier"]] = "[{}] {}".format(
+                    t["column"] + 1, t["spell"]["name"])
+            if not None in selected:
+                embed.add_field(
+                    name=talent["spec"]["name"] + ("*" if main_spec else ""),
+                    value="\n".join(selected))
+        await ctx.send(embed=embed)
 
 
 @tasks.loop(seconds=60)

@@ -50,7 +50,7 @@ class Blizzard:
     @classmethod
     async def get_character(cls, realm_name, character_name, revisited=False):
         query = "?access_token={}".format(cls._token) \
-                + "&fields=items,stats,talents,guild,progression"
+                + "&fields=items,stats,guild,progression&locale=ko_KR"
         url = encode("{}/wow/character/{}/{}".format(
             cls.BASE, REALM.EN(realm_name), character_name), query)
 
@@ -62,6 +62,23 @@ class Blizzard:
                     return await cls.get_character(
                         realm_name, character_name, revisited=True)
                 logger.error("Failed to get character from blizzard.")
+                return None
+
+    @classmethod
+    async def get_character_talents(cls, realm_name, character_name, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&fields=talents&locale=ko_KR"
+        url = encode("{}/wow/character/{}/{}".format(
+            cls.BASE, REALM.EN(realm_name), character_name), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_character_talents(
+                        realm_name, character_name, revisited=True)
+                logger.error("Failed to get talents of character from blizzard.")
                 return None
 
     @classmethod
