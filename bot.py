@@ -499,6 +499,9 @@ async def guild_news():
                         desc += "착용 효과: "
                     desc += spell["scaledDescription"]
                     desc += "\n"
+            if "gemInfo" in item:
+                desc += item["getInfo"]["bonus"]["name"]
+                desc += "\n"
 
             embed = discord.Embed(
                 title="",
