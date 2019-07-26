@@ -459,7 +459,7 @@ async def _token(ctx, *args):
 
 _last_news_timestamp = None
 
-@tasks.loop(seconds=300)
+@tasks.loop(seconds=60)
 async def guild_news():
     global _last_news_timestamp
 
@@ -490,7 +490,15 @@ async def guild_news():
                     stats.append("{} +{}".format(
                         SECONDARY_STAT[stat["stat"]], stat["amount"]))
             if len(stats) > 0:
-                desc += "{}\n".format("  ".join(stats))
+                desc += "{}\n".format(" ".join(stats))
+            if "itemSpells" in item:
+                for spell in item["itemSpells"]:
+                    if spell["trigger"] == "ON_USE":
+                        desc += "사용 효과: "
+                    elif spell["trigger"] == "ON_EQUIP":
+                        desc += "착용 효과: "
+                    desc += spell["scaledDescription"]
+                    desc += "\n"
 
             embed = discord.Embed(
                 title="",
