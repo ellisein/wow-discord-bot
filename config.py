@@ -1,13 +1,13 @@
 import os
+import json
 from configparser import RawConfigParser
 
 
 _CONFIG_DATA = dict()
 
-def read_config(filename):
+def read_cfg(filename):
     if not os.path.isfile(filename):
-        print("Cannot find config file '{}'.".format(filename))
-        return
+        return False
 
     config = RawConfigParser()
     config.read(filename)
@@ -15,7 +15,29 @@ def read_config(filename):
     for s in config.sections():
         for i in config.items(s):
             _CONFIG_DATA["{}_{}".format(s, i[0])] = i[1]
-    print("Successfully read config file from '{}'.".format(filename))
+    return True
+
+def read_json(filename):
+    if not os.path.isfile(filename):
+        return False
+
+    with open(filename, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    for d in data:
+        _CONFIG_DATA[d] = data[d]
+    return True
+
+def read_config(filename):
+    ret = False
+    if filename.endswith(".cfg"):
+        ret = read_cfg(filename)
+    elif filename.endswith(".json"):
+        ret = read_json(filename)
+
+    if ret:
+        print("Successfully read config file from '{}'.".format(filename))
+    else:
+        print("Cannot read config file '{}'.".format(filename))
 
 def get(label):
     if label in _CONFIG_DATA:
@@ -25,3 +47,4 @@ def get(label):
 
 read_config("key.cfg")
 read_config("settings.cfg")
+read_config("params.json")

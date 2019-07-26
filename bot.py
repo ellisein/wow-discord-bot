@@ -140,18 +140,23 @@ async def _character(ctx, *args):
         return
 
     embed = discord.Embed(
-        title=character_name,
+        title="",
         color=COLOR.BLUE,
         description="<{}>\n{} {}".format(
             res[1]["guild"]["name"],
             RACE.KR(res[1]["race"]),
             CLASS.KR(res[1]["class"])))
+
     embed.set_thumbnail(url="{}/{}".format(
         Blizzard.THUMBNAIL_BASE, res[1]["thumbnail"]))
+    embed.set_author(
+        name="{}-{}".format(character_name, REALM.KR(realm_name)),
+        icon_url=thumbnail(GAME_ICON.HORDE if res[1]["faction"] == 1 \
+                           else GAME_ICON.ALLIANCE))
 
     embed.add_field(
         name="아이템 레벨",
-        value="최대 {}, 착용 {}, 아제로스의 심장 {} ({})".format(
+        value="최대 {}, 착용 **{}**, 아제로스의 심장 {} ({})".format(
             res[1]["items"]["averageItemLevel"],
             res[1]["items"]["averageItemLevelEquipped"],
             res[1]["items"]["neck"]["azeriteItem"]["azeriteLevel"],
@@ -167,7 +172,7 @@ async def _character(ctx, *args):
 
     embed.add_field(
         name="레이더 점수",
-        value="현재 시즌 {}점".format(res[0]["mythic_plus_scores_by_season"][0]["scores"]["all"]))
+        value="현재 시즌 **{}**점".format(res[0]["mythic_plus_scores_by_season"][0]["scores"]["all"]))
 
     embed.add_field(
         name="이번주 쐐기 던전 최고기록",
@@ -231,7 +236,7 @@ async def _appearance(ctx, *args):
         return
 
     embed = discord.Embed(
-        title=character_name,
+        title="{}-{}".format(character_name, REALM.KR(realm_name)),
         color=COLOR.BLUE,
         description="")
     embed.set_image(url=res["render_url"])
@@ -374,9 +379,13 @@ async def _token(ctx, *args):
         if spec is not None:
             # !특성 (캐릭터이름) (전문화)
             embed = discord.Embed(
-                title="{}-{}의 특성 정보".format(character_name, REALM.KR(realm_name)),
+                title="",
                 color=COLOR.BLUE,
                 description="")
+            embed.set_author(
+                name="{}-{}".format(character_name, REALM.KR(realm_name)),
+                icon_url=thumbnail(GAME_ICON.HORDE if res["faction"] == 1 \
+                                   else GAME_ICON.ALLIANCE))
 
             found = False
             for talent in res["talents"]:
@@ -425,9 +434,13 @@ async def _token(ctx, *args):
     else:
         # !특성 (캐릭터이름)
         embed = discord.Embed(
-            title="{}-{}의 특성 정보".format(character_name, REALM.KR(realm_name)),
+            title="",
             color=COLOR.BLUE,
             description="")
+        embed.set_author(
+            name="{}-{}".format(character_name, REALM.KR(realm_name)),
+            icon_url=thumbnail(GAME_ICON.HORDE if res["faction"] == 1 \
+                               else GAME_ICON.ALLIANCE))
 
         for talent in res["talents"]:
             if not "spec" in talent:
@@ -444,10 +457,60 @@ async def _token(ctx, *args):
         await ctx.send(embed=embed)
 
 
-@tasks.loop(seconds=60)
-async def timing_task():
-    # EXAMPLE
-    await Blizzard.change_access_token()
+_last_news_timestamp = None
+
+@tasks.loop(seconds=300)
+async def guild_news():
+    global _last_news_timestamp
+
+    channel = bot.get_channel(config.get("guild_news_channel"))
+    if channel is not None:
+        news_to_show = list()
+        news = await Blizzard.get_guild_news(
+            config.get("default_realm"), config.get("default_guild"))
+        if _last_news_timestamp is None:
+            _last_news_timestamp = news["news"][0]["timestamp"]
+        else:
+            for n in news["news"]:
+                if n["timestamp"] > _last_news_timestamp:
+                    if n["type"] == "itemLoot":
+                        news_to_show.append(n)
+
+        for i, n in enumerate(news_to_show):
+            media = await Blizzard.get_character_media(REALM.EN(news["realm"]), n["character"])
+            item = await Blizzard.get_equippable_item(
+                n["itemId"], n["bonusLists"])
+            desc = "아이템 레벨 **{}**{}\n".format(
+                item["itemLevel"], " 보홈" if item["hasSockets"] else "")
+            if "nameDescription" in item and item["nameDescription"] != "":
+                desc += "{}\n".format(item["nameDescription"].lstrip())
+            stats = list()
+            for stat in item["bonusStats"]:
+                if stat["stat"] in SECONDARY_STAT:
+                    stats.append("{} +{}".format(
+                        SECONDARY_STAT[stat["stat"]], stat["amount"]))
+            if len(stats) > 0:
+                desc += "{}\n".format("  ".join(stats))
+
+            embed = discord.Embed(
+                title="",
+                color=COLOR.BLUE,
+                description="")
+            embed.set_author(
+                name=n["character"],
+                icon_url=media["avatar_url"])
+            embed.set_thumbnail(
+                url="https://render-kr.worldofwarcraft.com/icons/56/{}.jpg".format(item["icon"]))
+            embed.add_field(
+                name=item["name"],
+                value=desc)
+            embed.set_footer(
+                text=datetime.fromtimestamp(int(n["timestamp"] / 1000)).strftime(
+                    "%Y-%m-%d %H:%M"))
+            await channel.send(embed=embed)
+
+            if _last_news_timestamp < n["timestamp"]:
+                _last_news_timestamp = n["timestamp"]
 
 
 if __name__ == "__main__":
@@ -455,4 +518,5 @@ if __name__ == "__main__":
     if token is None:
         logger.error("Failed to get discord token.")
     else:
+        guild_news.start()
         bot.run(token)

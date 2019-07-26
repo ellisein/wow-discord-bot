@@ -278,3 +278,35 @@ class Blizzard:
                     return await cls.get_token_price(revisited=True)
                 logger.error("Failed to get token price from blizzard.")
                 return None
+
+    @classmethod
+    async def get_guild_news(cls, realm_name, guild_name, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&locale=ko_KR&fields=news"
+        url = encode("{}/wow/guild/{}/{}".format(
+            cls.BASE, realm_name, guild_name), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_guild_news(realm_name, guild_name, revisited=True)
+                logger.error("Failed to get guild news from blizzard.")
+                return None
+
+    @classmethod
+    async def get_equippable_item(cls, item_id, bonus_lists, revisited=False):
+        bonus_lists = [str(bl) for bl in bonus_lists]
+        query = "?access_token={}".format(cls._token) \
+                + "&locale=ko_KR&bl={}".format(",".join(bonus_lists))
+        url = encode("{}/wow/item/{}".format(cls.BASE, item_id), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_equippable_item(item_id, bonus_lists, revisited=True)
+                logger.error("Failed to get equippable item from blizzard.")
+                return None

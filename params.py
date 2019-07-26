@@ -13,6 +13,8 @@ class RAID_DIFFICULTIES:
 
 class GAME_ICON:
     MYTHIC_KEYSTONE = "inv_relics_hourglass"
+    HORDE = "pvpcurrency-honor-horde"
+    ALLIANCE = "pvpcurrency-honor-alliance"
 
 class REALM:
     _realms = dict()
@@ -185,6 +187,12 @@ class WCL_CLASS:
     }
 
     @classmethod
+    def get(cls, name):
+        if name in cls._classes:
+            return cls._classes[name]
+        return None
+
+    @classmethod
     def get_by_abbreviation(cls, abbr):
         for i in cls._classes.values():
             if abbr in i.abbreviations:
@@ -205,3 +213,9 @@ MYTHIC_PLUS_RESULTS = {
     3: "시간내클리어+3",
 }
 TALENTS_REQUIRED_LEVEL = [15, 30, 45, 60, 75, 90, 100]
+SECONDARY_STAT = {
+    32: "치명타 및 극대화",
+    36: "가속",
+    40: "유연성",
+    49: "특화",
+}
