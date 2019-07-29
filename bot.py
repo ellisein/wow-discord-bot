@@ -286,39 +286,6 @@ async def _affixes(ctx):
     return embed
 
 
-@bot.command(name="경매장")
-@commands.cooldown(10, 60, commands.BucketType.user)
-async def _auction(ctx, *args):
-    await ctx.trigger_typing()
-    if len(args) == 0:
-        embed = discord.Embed(
-            title="명령어 오류",
-            color=COLOR.RED,
-            description="명령어 뒤에 '(약초/광석/영약/물약/요리) (서버 이름)'을 적어야 합니다.")
-        embed.add_field(
-            name="사용 예시",
-            value="!경매장 영약 아즈샤라")
-        if REALM.exists(config.get("default_realm")):
-            embed.set_footer(
-                text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
-                    REALM.KR(config.get("default_realm"))))
-        await ctx.send(embed=embed)
-        return
-
-    item_flag = args[0]
-    realm_name = args[1] if len(args) > 1 else REALM.EN(config.get("default_realm"))
-    
-    if not REALM.exists(realm_name):
-        await ctx.send(
-            embed=discord.Embed(
-                title="실행 오류",
-                color=COLOR.RED,
-                description="존재하지 않는 서버 이름입니다."))
-        return
-
-    # TODO
-
-
 @bot.command(name="토큰")
 @static_result(600)
 @commands.cooldown(10, 60, commands.BucketType.user)
