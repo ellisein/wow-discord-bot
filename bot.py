@@ -311,7 +311,7 @@ async def _token(ctx, *args):
 
 @bot.command(name="특성")
 @commands.cooldown(10, 60, commands.BucketType.user)
-async def _token(ctx, *args):
+async def _talent(ctx, *args):
     await ctx.trigger_typing()
     if len(args) == 0:
         embed = discord.Embed(
@@ -424,9 +424,15 @@ async def _token(ctx, *args):
         await ctx.send(embed=embed)
 
 
+@bot.command(name="")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _(ctx, *args):
+    await ctx.trigger_typing()
+
+
 _last_news_timestamp = None
 
-@tasks.loop(seconds=60)
+@tasks.loop(seconds=5)
 async def guild_news():
     global _last_news_timestamp
 
@@ -445,29 +451,38 @@ async def guild_news():
 
         for i, n in enumerate(news_to_show):
             media = await Blizzard.get_character_media(REALM.EN(news["realm"]), n["character"])
-            item = await Blizzard.get_equippable_item(
-                n["itemId"], n["bonusLists"])
-            desc = "아이템 레벨 **{}**{}\n".format(
-                item["itemLevel"], " 보홈" if item["hasSockets"] else "")
+            item = await Blizzard.get_equippable_item(n["itemId"], n["bonusLists"])
+
+            desc = ""
             if "nameDescription" in item and item["nameDescription"] != "":
                 desc += "{}\n".format(item["nameDescription"].lstrip())
-            stats = list()
+            desc += "아이템 레벨 **{}**{}\n".format(
+                item["itemLevel"], " 보홈" if item["hasSockets"] else "")
+            stat1 = list()
+            stat2 = list()
+            for stat in item["bonusStats"]:
+                if stat["stat"] in PRIMARY_STAT:
+                    stat1.append("{} +{}".format(
+                        PRIMARY_STAT[stat["stat"]], stat["amount"]))
             for stat in item["bonusStats"]:
                 if stat["stat"] in SECONDARY_STAT:
-                    stats.append("{} +{}".format(
+                    stat2.append("{} +{}".format(
                         SECONDARY_STAT[stat["stat"]], stat["amount"]))
-            if len(stats) > 0:
-                desc += "{}\n".format(" ".join(stats))
+            if len(stat1) > 0:
+                desc += "{}\n".format(" / ".join(stat1))
+            if len(stat2) > 0:
+                desc += "{}\n".format(" / ".join(stat2))
             if "itemSpells" in item:
                 for spell in item["itemSpells"]:
-                    if spell["trigger"] == "ON_USE":
-                        desc += "사용 효과: "
-                    elif spell["trigger"] == "ON_EQUIP":
-                        desc += "착용 효과: "
-                    desc += spell["scaledDescription"]
-                    desc += "\n"
+                    if len(spell["scaledDescription"]) > 0:
+                        if spell["trigger"] == "ON_USE":
+                            desc += "사용 효과: "
+                        elif spell["trigger"] == "ON_EQUIP":
+                            desc += "착용 효과: "
+                        desc += spell["scaledDescription"]
+                        desc += "\n"
             if "gemInfo" in item:
-                desc += item["getInfo"]["bonus"]["name"]
+                desc += item["gemInfo"]["bonus"]["name"]
                 desc += "\n"
 
             embed = discord.Embed(
