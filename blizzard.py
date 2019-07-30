@@ -310,3 +310,19 @@ class Blizzard:
                     return await cls.get_equippable_item(item_id, bonus_lists, revisited=True)
                 logger.error("Failed to get equippable item from blizzard.")
                 return None
+
+    @classmethod
+    async def get_guild_members(cls, realm_name, guild_name, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&locale=ko_KR&fields=members"
+        url = encode("{}/wow/guild/{}/{}".format(
+            cls.BASE, realm_name, guild_name), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_guild_members(realm_name, guild_name, revisited=True)
+                logger.error("Failed to get guild members from blizzard.")
+                return None

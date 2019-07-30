@@ -125,11 +125,9 @@ async def _character(ctx, *args):
                 description="존재하지 않는 서버 이름입니다."))
         return
 
-    async def run():
-        return await asyncio.gather(
-            Raider.get_character(realm_name, character_name),
-            Blizzard.get_character(realm_name, character_name))
-    res = await run()
+    res = await asyncio.gather(
+        Raider.get_character(realm_name, character_name),
+        Blizzard.get_character(realm_name, character_name))
 
     if None in res:
         await ctx.send(
@@ -424,15 +422,87 @@ async def _talent(ctx, *args):
         await ctx.send(embed=embed)
 
 
-@bot.command(name="")
+@bot.command(name="주차")
+@static_result(600)
 @commands.cooldown(10, 60, commands.BucketType.user)
-async def _(ctx, *args):
+async def _highest_mythic_plus(ctx, *args):
     await ctx.trigger_typing()
+
+    res = await Blizzard.get_guild_members(
+        config.get("default_realm"), config.get("default_guild"))
+    if res is None:
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="길드원 목록을 불러오는 데 실패했습니다."))
+        return None
+
+    members = list()
+    for member in res["members"]:
+        if member["character"]["level"] >= MAX_LEVEL:
+            members.append(member["character"]["name"])
+    if len(members) == 0:
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="길드원 중 {}레벨 캐릭터가 없습니다.".format(MAX_LEVEL)))
+        return None
+
+    tasks = list()
+    for m in members:
+        tasks.append(Raider.get_character(config.get("default_realm"), m))
+    mythic_members = await asyncio.gather(*tasks)
+
+    classified = {
+        "15단 이상": [],
+        "10단 이상": [],
+        "10단 미만": [],
+        "쐐기 간 적 없음": []
+    }
+    for m in mythic_members:
+        if m is None:
+            continue
+        if m["mythic_plus_scores_by_season"][0]["scores"]["all"] > 0:
+            if len(m["mythic_plus_weekly_highest_level_runs"]) > 0:
+                best_run = m["mythic_plus_weekly_highest_level_runs"][0]
+                if best_run["mythic_level"] >= 15:
+                    classified["15단 이상"].append("{}({})".format(
+                        m["name"], best_run["mythic_level"]))
+                elif best_run["mythic_level"] >= 10:
+                    classified["10단 이상"].append("{}({})".format(
+                        m["name"], best_run["mythic_level"]))
+                else:
+                    classified["10단 미만"].append("{}({})".format(
+                        m["name"], best_run["mythic_level"]))
+            else:
+                classified["쐐기 간 적 없음"].append(m["name"])
+
+    period = await Blizzard.get_mythic_keystone_period()
+    period_s = ""
+    if period is not None:
+        start = datetime.fromtimestamp(int(period["start_timestamp"] / 1000))
+        end = datetime.fromtimestamp(int(period["end_timestamp"] / 1000))
+        period_s = "{} ~ {}".format(
+            start.strftime("%Y-%m-%d %H:%M"),
+            end.strftime("%Y-%m-%d %H:%M"))
+
+    embed = discord.Embed(
+        title="이번주 길드원 쐐기 던전 현황",
+        color=COLOR.BLUE,
+        description=period_s)
+    for i in classified:
+        if len(classified[i]) > 0:
+            embed.add_field(name=i, value=", ".join(classified[i]))
+    embed.set_footer(text="* 이번 시즌에 쐐기 던전을 간 적이 있는 캐릭터만 표시됩니다.")
+    await ctx.send(embed=embed)
+    return embed
 
 
 _last_news_timestamp = None
 
-@tasks.loop(seconds=5)
+@tasks.loop(seconds=60)
 async def guild_news():
     global _last_news_timestamp
 
