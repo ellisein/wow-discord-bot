@@ -500,86 +500,9 @@ async def _highest_mythic_plus(ctx, *args):
     return embed
 
 
-_last_news_timestamp = None
-
-@tasks.loop(seconds=60)
-async def guild_news():
-    global _last_news_timestamp
-
-    channel = bot.get_channel(config.get("guild_news_channel"))
-    if channel is not None:
-        news_to_show = list()
-        news = await Blizzard.get_guild_news(
-            config.get("default_realm"), config.get("default_guild"))
-        if _last_news_timestamp is None:
-            _last_news_timestamp = news["news"][0]["timestamp"]
-        else:
-            for n in news["news"]:
-                if n["timestamp"] > _last_news_timestamp:
-                    if n["type"] == "itemLoot":
-                        news_to_show.append(n)
-
-        for i, n in enumerate(news_to_show):
-            media = await Blizzard.get_character_media(REALM.EN(news["realm"]), n["character"])
-            item = await Blizzard.get_equippable_item(n["itemId"], n["bonusLists"])
-
-            desc = ""
-            if "nameDescription" in item and item["nameDescription"] != "":
-                desc += "{}\n".format(item["nameDescription"].lstrip())
-            desc += "아이템 레벨 **{}**{}\n".format(
-                item["itemLevel"], " 보홈" if item["hasSockets"] else "")
-            stat1 = list()
-            stat2 = list()
-            for stat in item["bonusStats"]:
-                if stat["stat"] in PRIMARY_STAT:
-                    stat1.append("{} +{}".format(
-                        PRIMARY_STAT[stat["stat"]], stat["amount"]))
-            for stat in item["bonusStats"]:
-                if stat["stat"] in SECONDARY_STAT:
-                    stat2.append("{} +{}".format(
-                        SECONDARY_STAT[stat["stat"]], stat["amount"]))
-            if len(stat1) > 0:
-                desc += "{}\n".format(" / ".join(stat1))
-            if len(stat2) > 0:
-                desc += "{}\n".format(" / ".join(stat2))
-            if "itemSpells" in item:
-                for spell in item["itemSpells"]:
-                    if len(spell["scaledDescription"]) > 0:
-                        if spell["trigger"] == "ON_USE":
-                            desc += "사용 효과: "
-                        elif spell["trigger"] == "ON_EQUIP":
-                            desc += "착용 효과: "
-                        desc += spell["scaledDescription"]
-                        desc += "\n"
-            if "gemInfo" in item:
-                desc += item["gemInfo"]["bonus"]["name"]
-                desc += "\n"
-
-            embed = discord.Embed(
-                title="",
-                color=COLOR.BLUE,
-                description="")
-            embed.set_author(
-                name=n["character"],
-                icon_url=media["avatar_url"])
-            embed.set_thumbnail(
-                url="https://render-kr.worldofwarcraft.com/icons/56/{}.jpg".format(item["icon"]))
-            embed.add_field(
-                name=item["name"],
-                value=desc)
-            embed.set_footer(
-                text=datetime.fromtimestamp(int(n["timestamp"] / 1000)).strftime(
-                    "%Y-%m-%d %H:%M"))
-            await channel.send(embed=embed)
-
-            if _last_news_timestamp < n["timestamp"]:
-                _last_news_timestamp = n["timestamp"]
-
-
 if __name__ == "__main__":
     token = config.get("discord_token")
     if token is None:
         logger.error("Failed to get discord token.")
     else:
-        guild_news.start()
         bot.run(token)
