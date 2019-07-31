@@ -194,14 +194,15 @@ async def _character(ctx, *args):
             mythic_kills, boss_count))
 
     embed.add_field(
-        name="___",
-        value="[전투정보실]({}) / [레이더(쐐기)]({}) / [WCL(레이드)]({})".format(
+        name="URL",
+        value="[전정실]({}) / [레이더]({}) / [WCL]({})".format(
             "https://worldofwarcraft.com/ko-kr/character/kr/{}/{}".format(
                 REALM.EN(realm_name), character_name),
             "https://raider.io/characters/kr/{}/{}".format(
                 REALM.EN(realm_name), character_name),
             "https://www.warcraftlogs.com/character/kr/{}/{}".format(
-                REALM.KR(realm_name), character_name)))
+                REALM.KR(realm_name), character_name)),
+        inline=False)
 
     await ctx.send(embed=embed)
 
@@ -253,11 +254,18 @@ async def _appearance(ctx, *args):
     if items is not None:
         transmogs = list()
         for item in items["equipped_items"]:
+            if item["slot"]["type"] in ["NECK", "FINGER_1", "FINGER_2", "TRINKET_1", "TRINKET_2"]:
+                continue
             if "transmog" in item:
-                transmogs.append("{}: [{}](https://ko.wowhead.com/item={})".format(
+                transmogs.append("{}: [{}](https://ko.wowhead.com/item={}) *".format(
                     item["inventory_type"]["name"],
                     item["transmog"]["item"]["name"],
                     item["transmog"]["item"]["id"]))
+            else:
+                transmogs.append("{}: [{}](https://ko.wowhead.com/item={})".format(
+                    item["inventory_type"]["name"],
+                    item["name"],
+                    item["item"]["id"]))
         embed.add_field(
             name="형상 정보",
             value="\n".join(transmogs))
