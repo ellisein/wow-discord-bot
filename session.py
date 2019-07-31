@@ -6,23 +6,16 @@ from datetime import datetime, timedelta
 import logger
 
 
-class Session:
-    def __init__(self):
-        self._session = aiohttp.ClientSession()
-
-    def __del__(self):
-        loop = asyncio.get_event_loop()
-        loop.run_until_complete(self.close())
-
-    async def close(self):
-        await self._session.close()
-
-
-session = Session()
+_session = aiohttp.ClientSession()
 logger.info("Initialized a new aiohttp session.")
 
 def get_session():
-    return session._session
+    return _session
+
+def close_session():
+    loop = asyncio.new_event_loop()
+    loop.run_until_complete(_session.close())
+    loop.close()
 
 
 _instant_result = dict()

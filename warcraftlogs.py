@@ -8,8 +8,6 @@ from params import *
 from session import get_session, static_result
 
 
-_session = aiohttp.ClientSession()
-
 class Warcraftlogs:
     BASE = "https://www.warcraftlogs.com/v1"
 
