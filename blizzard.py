@@ -103,7 +103,7 @@ class Blizzard:
         query = "?access_token={}".format(cls._token) \
                 + "&namespace=profile-kr&locale=ko_KR"
         url = encode("{}/profile/wow/character/{}/{}/equipment".format(
-            cls.BASE, realm_name, character_name), query)
+            cls.BASE, REALM.EN(realm_name), character_name.lower()), query)
 
         async with get_session().get(url) as response:
             if response.status == 200:

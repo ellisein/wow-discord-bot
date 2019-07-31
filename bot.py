@@ -193,6 +193,16 @@ async def _character(ctx, *args):
             heroic_kills, boss_count,
             mythic_kills, boss_count))
 
+    embed.add_field(
+        name="___",
+        value="[전투정보실]({}) / [레이더(쐐기)]({}) / [WCL(레이드)]({})".format(
+            "https://worldofwarcraft.com/ko-kr/character/kr/{}/{}".format(
+                REALM.EN(realm_name), character_name),
+            "https://raider.io/characters/kr/{}/{}".format(
+                REALM.EN(realm_name), character_name),
+            "https://www.warcraftlogs.com/character/kr/{}/{}".format(
+                REALM.KR(realm_name), character_name)))
+
     await ctx.send(embed=embed)
 
 
@@ -244,8 +254,10 @@ async def _appearance(ctx, *args):
         transmogs = list()
         for item in items["equipped_items"]:
             if "transmog" in item:
-                transmogs.append("{}: {}".format(
-                    item["inventory_type"]["name"], item["transmog"]["item"]["name"]))
+                transmogs.append("{}: [{}](https://ko.wowhead.com/item={})".format(
+                    item["inventory_type"]["name"],
+                    item["transmog"]["item"]["name"],
+                    item["transmog"]["item"]["id"]))
         embed.add_field(
             name="형상 정보",
             value="\n".join(transmogs))
