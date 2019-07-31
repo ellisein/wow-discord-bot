@@ -99,6 +99,23 @@ class Blizzard:
                 return None
 
     @classmethod
+    async def get_character_items(cls, realm_name, character_name, revisited=False):
+        query = "?access_token={}".format(cls._token) \
+                + "&namespace=profile-kr&locale=ko_KR"
+        url = encode("{}/profile/wow/character/{}/{}/equipment".format(
+            cls.BASE, realm_name, character_name), query)
+
+        async with get_session().get(url) as response:
+            if response.status == 200:
+                return await response.json()
+            else:
+                if not revisited and await cls.check_access_token():
+                    return await cls.get_character_items(
+                        realm_name, character_name, revisited=True)
+                logger.error("Failed to get equipped items of character from blizzard.")
+                return None
+
+    @classmethod
     async def get_auction_url(cls, realm_name, revisited=False):
         query = "?access_token={}&locale=ko_KR".format(cls._token)
         url = encode("{}/wow/auction/data/{}".format(cls.BASE, realm_name), query)

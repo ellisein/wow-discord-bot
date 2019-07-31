@@ -238,6 +238,18 @@ async def _appearance(ctx, *args):
         color=COLOR.BLUE,
         description="")
     embed.set_image(url=res["render_url"])
+
+    items = await Blizzard.get_character_items(realm_name, character_name)
+    if items is not None:
+        transmogs = list()
+        for item in items["equipped_items"]:
+            if "transmog" in item:
+                transmogs.append("{}: {}".format(
+                    item["inventory_type"]["name"], item["transmog"]["item"]["name"]))
+        embed.add_field(
+            name="형상 정보",
+            value="\n".join(transmogs))
+
     await ctx.send(embed=embed)
 
 
