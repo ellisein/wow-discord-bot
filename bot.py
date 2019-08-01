@@ -17,20 +17,6 @@ from session import close_session, static_result
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
 
-"""
-명령어
-
-!명령어 : 모든 가능한 명령어 출력
-!캐릭터 (캐릭터이름)-(서버이름) : 캐릭터 정보 조회
-!어픽스 : 금주의 쐐기돌 던전 어픽스 조회
-!경매장 (종류) (서버) : 경매장 각 아이템의 최저가격 조회
-!장신구 (직업) : 장신구 순위 조회
-!아제특성 (직업) : 아제라이트 특성 순위 조회
-!특성 (직업) : 특성 순위 조회
-!정수 (직업) : 정수 순위 조회
-!스탯 (직업) : 2차 스탯 우선순위 조회
-!토큰 : 토큰 가격 조회
-"""
 
 async def init_params():
     races = await Blizzard.get_races()

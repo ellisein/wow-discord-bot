@@ -156,30 +156,6 @@ class Blizzard:
                 return None
 
     @classmethod
-    async def get_auction(cls, item_flag, realm_name):
-        auction = await cls.get_auction_url(realm_name)
-        if aution is None:
-            return None
-        res = await cls.get_auction_data(auction["files"][0]["url"])
-        if res is None:
-            return None
-
-        for i in res["auctions"]:
-            if not i["item"] in cls.auction_info:
-                item = await cls.get_item(i["item"])
-                if item is not None:
-                    cls.auction_info[i["item"]] = {
-                        "name": item["name"],
-                        "level": item["level"],
-                        "class": item["item_class"]["name"],
-                        "sub_class": item["item_subclass"]["name"]}
-            else:
-                item = cls.auction_info[i["item"]]
-
-        # TODO : 경매장 아이템과 해당 아이템의 최저가격 정리
-        #        임시 메모리에 저장하여 일정 기간 저장
-
-    @classmethod
     async def get_races(cls, revisited=False):
         query = "?access_token={}".format(cls._token) \
                 + "&namespace=static-kr&locale=ko_KR"
