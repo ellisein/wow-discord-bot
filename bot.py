@@ -595,7 +595,7 @@ async def _highest_mythic_plus(ctx, *args):
 
 
 if __name__ == "__main__":
-    token = config.get("discord_beta_token")
+    token = config.get("discord_token")
     if token is None:
         logger.error("Failed to get discord token.")
     else:
