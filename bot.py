@@ -207,6 +207,82 @@ async def _character(ctx, *args):
     await ctx.send(embed=embed)
 
 
+@bot.command(name="아제특성")
+@commands.cooldown(10, 60, commands.BucketType.user)
+async def _azeritePower(ctx, *args):
+    await ctx.trigger_typing()
+    if len(args) == 0:
+        embed = discord.Embed(
+            title="명령어 오류",
+            color=COLOR.RED,
+            description="명령어 뒤에 '(캐릭터 이름)-(서버 이름)'을 적어야 합니다.")
+        embed.add_field(
+            name="사용 예시",
+            value="!아제특성 팬더곰-헬스크림")
+        if REALM.exists(config.get("default_realm")):
+            embed.set_footer(
+                text="서버 이름을 명시하지 않으면 {} 서버로 간주합니다.".format(
+                    REALM.KR(config.get("default_realm"))))
+        await ctx.send(embed=embed)
+        return
+
+    character_name, realm_name = utils.parse_character_name(args[0])
+    if not REALM.exists(realm_name):
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="존재하지 않는 서버 이름입니다."))
+        return
+
+    items = await Blizzard.get_character_items(realm_name, character_name)
+    media = await Blizzard.get_character_media(realm_name, character_name)
+    if items is None:
+        await ctx.send(
+            embed=discord.Embed(
+                title="실행 오류",
+                color=COLOR.RED,
+                description="플레이어를 찾을 수 없습니다."))
+        return
+
+    azeriteEssences = {}
+    azeritePowers = {}
+
+    for item in items["equipped_items"]:
+        if item["slot"]["type"] in ["HEAD", "SHOULDER", "CHEST"]:
+            for power in item["azerite_details"]["selected_powers"]:
+                subtitle = "{} ({})".format(
+                    item["slot"]["name"], item["level"]["value"])
+                if not subtitle in azeritePowers:
+                    azeritePowers[subtitle] = []
+                if "spell_tooltip" in power:
+                    if power["tier"] >= 3:
+                        azeritePowers[subtitle].append(power["spell_tooltip"]["spell"]["name"])
+        if item["slot"]["type"] == "NECK":
+            for essence in item["azerite_details"]["selected_essences"]:
+                if "essence" in essence:
+                    azeriteEssences[essence["slot"]] \
+                        = "{} {}등급".format(essence["essence"]["name"], essence["rank"])
+
+    essence_msg  = "**주능력**: {}\n".format(azeriteEssences[0]) if 0 in azeriteEssences else ""
+    essence_msg += "**부차능력**: {}\n".format(azeriteEssences[1]) if 1 in azeriteEssences else ""
+    essence_msg += "**부차능력**: {}\n".format(azeriteEssences[2]) if 2 in azeriteEssences else ""
+
+    embed = discord.Embed(
+        title="{}-{}".format(character_name, REALM.KR(realm_name)),
+        color=COLOR.BLUE,
+        description="")
+    if media is not None:
+        embed.set_thumbnail(url=media["avatar_url"])
+    embed.add_field(
+        name="아제라이트 정수",
+        value=essence_msg)
+    for i in azeritePowers:
+        embed.add_field(name=i, value=" / ".join(azeritePowers[i]), inline=False)
+
+    await ctx.send(embed=embed)
+
+
 @bot.command(name="외형")
 @commands.cooldown(10, 60, commands.BucketType.user)
 async def _appearance(ctx, *args):
@@ -533,7 +609,7 @@ async def _highest_mythic_plus(ctx, *args):
 
 
 if __name__ == "__main__":
-    token = config.get("discord_token")
+    token = config.get("discord_beta_token")
     if token is None:
         logger.error("Failed to get discord token.")
     else:
