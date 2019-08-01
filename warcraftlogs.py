@@ -5,7 +5,6 @@ from utils import encode
 import logger
 import config
 from params import *
-from session import get_session, static_result
 
 
 class Warcraftlogs:
@@ -16,9 +15,10 @@ class Warcraftlogs:
         query = "?api_key={}".format(config.get("warcraftlogs_token"))
         url = encode("{}/class".format(cls.BASE), query)
 
-        async with get_session().get(url) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                logger.error("Failed to get classes from warcraftlogs.")
-                return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.error("Failed to get classes from warcraftlogs.")
+                    return None

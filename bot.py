@@ -12,7 +12,7 @@ from params import *
 from raider import Raider
 from blizzard import Blizzard
 from warcraftlogs import Warcraftlogs
-from session import close_session, static_result
+from decorators import static_result
 
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
@@ -600,4 +600,3 @@ if __name__ == "__main__":
         logger.error("Failed to get discord token.")
     else:
         bot.run(token)
-        close_session()

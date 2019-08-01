@@ -5,7 +5,6 @@ from utils import encode
 import logger
 import config
 from params import *
-from session import get_session
 
 
 class Raider:
@@ -16,12 +15,13 @@ class Raider:
         query = "?region={}&locale={}".format(REGION, LOCALE)
         url = encode("{}/mythic-plus/affixes".format(cls.BASE), query)
 
-        async with get_session().get(url) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                logger.error("Failed to get weekly affixes from raider.")
-                return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.error("Failed to get weekly affixes from raider.")
+                    return None
 
     @classmethod
     async def get_character(cls, realm_name, character_name):
@@ -32,9 +32,10 @@ class Raider:
                 + "mythic_plus_weekly_highest_level_runs"
         url = encode("{}/characters/profile".format(cls.BASE), query)
 
-        async with get_session().get(url) as response:
-            if response.status == 200:
-                return await response.json()
-            else:
-                logger.error("Failed to get character from raider.")
-                return None
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                else:
+                    logger.error("Failed to get character from raider.")
+                    return None
