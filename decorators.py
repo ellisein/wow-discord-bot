@@ -2,8 +2,10 @@ import asyncio
 import aiohttp
 from functools import wraps
 from datetime import datetime, timedelta
+from discord.ext import commands
 
 import logger
+import config
 
 
 _instant_result = dict()
@@ -48,3 +50,12 @@ def static_result(refresh_time:int):
                 return result
         return wrapper
     return decorator
+
+def is_in_guild():
+    """
+    특정 명령어가 자신의 길드 디스코드 채널에서만 사용 가능하도록 합니다.
+    이외의 채널에 초대된 봇은 해당 명령어를 사용할 수 없습니다.
+    """
+    async def predicate(ctx):
+        return ctx.guild and ctx.guild.id == config.get("guild_channel")
+    return commands.check(predicate)

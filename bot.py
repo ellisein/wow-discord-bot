@@ -12,7 +12,7 @@ from params import *
 from raider import Raider
 from blizzard import Blizzard
 from warcraftlogs import Warcraftlogs
-from decorators import static_result
+from decorators import *
 
 
 bot = commands.Bot(command_prefix=config.get("command_prefix"))
@@ -59,6 +59,12 @@ async def on_command_error(ctx, exception):
                 color=COLOR.RED,
                 description="짧은 시간 동안 너무 많은 명령어를 입력하였습니다." \
                     + "\n잠시 후 다시 시도해주세요."))
+    elif type(exception) == commands.errors.CheckFailure:
+        await ctx.send(
+            embed=discord.Embed(
+                title="명령어 오류",
+                color=COLOR.RED,
+                description="현재 채널에서는 사용할 수 없는 명령어입니다."))
     elif type(exception) == commands.errors.CommandNotFound:
         pass
     else:
@@ -517,6 +523,7 @@ async def _talent(ctx, *args):
 
 
 @bot.command(name="주차")
+@is_in_guild()
 @static_result(600)
 @commands.cooldown(10, 60, commands.BucketType.user)
 async def _highest_mythic_plus(ctx, *args):
