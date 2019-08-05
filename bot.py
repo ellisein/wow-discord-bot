@@ -1,7 +1,7 @@
 import re
 import sys
 import asyncio
-from datetime import datetime
+from datetime import datetime, timedelta
 import discord
 from discord.ext import commands, tasks
 
@@ -363,8 +363,8 @@ async def _affixes(ctx):
 
     period = ""
     if res[1] is not None:
-        start = datetime.fromtimestamp(int(res[1]["start_timestamp"] / 1000))
-        end = datetime.fromtimestamp(int(res[1]["end_timestamp"] / 1000))
+        start = datetime.fromtimestamp(int(res[1]["start_timestamp"] / 1000)) + timedelta(hours=9)
+        end = datetime.fromtimestamp(int(res[1]["end_timestamp"] / 1000)) + timedelta(hours=9)
         period = "{} ~ {}".format(
             start.strftime("%Y-%m-%d %H:%M"),
             end.strftime("%Y-%m-%d %H:%M"))
@@ -583,8 +583,8 @@ async def _highest_mythic_plus(ctx, *args):
     period = await Blizzard.get_mythic_keystone_period()
     period_s = ""
     if period is not None:
-        start = datetime.fromtimestamp(int(period["start_timestamp"] / 1000))
-        end = datetime.fromtimestamp(int(period["end_timestamp"] / 1000))
+        start = datetime.fromtimestamp(int(period["start_timestamp"] / 1000)) + timedelta(hours=9)
+        end = datetime.fromtimestamp(int(period["end_timestamp"] / 1000)) + timedelta(hours=9)
         period_s = "{} ~ {}".format(
             start.strftime("%Y-%m-%d %H:%M"),
             end.strftime("%Y-%m-%d %H:%M"))
