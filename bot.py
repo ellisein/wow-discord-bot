@@ -129,13 +129,19 @@ async def _character(ctx, *args):
                 description="플레이어를 찾을 수 없습니다."))
         return
 
-    embed = discord.Embed(
-        title="",
-        color=COLOR.BLUE,
-        description="<{}>\n{} {}".format(
-            res[1]["guild"]["name"],
-            RACE.KR(res[1]["race"]),
-            CLASS.KR(res[1]["class"])))
+    if "guild" in res[1]:
+        embed = discord.Embed(
+            title="",
+            color=COLOR.BLUE,
+            description="<{}>\n{} {}".format(
+                res[1]["guild"]["name"],
+                RACE.KR(res[1]["race"]),
+                CLASS.KR(res[1]["class"])))
+    else:
+        embed = discord.Embed(
+            title="",
+            color=COLOR.BLUE,
+            description="")
 
     embed.set_thumbnail(url="{}/{}".format(
         Blizzard.THUMBNAIL_BASE, res[1]["thumbnail"]))
